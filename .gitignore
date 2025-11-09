@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+
+# IDE-specific folders
+.vs/
+.idea/
+.vscode/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS artifacts
+Thumbs.db
+.DS_Store
+ehthumbs.db
+*.swp
