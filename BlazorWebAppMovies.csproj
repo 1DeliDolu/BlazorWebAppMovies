@@ -10,12 +10,20 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="9.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid.EntityFrameworkAdapter" Version="9.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="BlazorSignalRApp/**/*.cs" />
+    <Content Remove="BlazorSignalRApp/**/*" />
+    <None Remove="BlazorSignalRApp/**/*" />
+    <EmbeddedResource Remove="BlazorSignalRApp/**/*" />
   </ItemGroup>
 
 </Project>
