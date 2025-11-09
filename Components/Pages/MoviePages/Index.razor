@@ -9,6 +9,12 @@
 <PageTitle>Index</PageTitle>
 
 <h1>Index</h1>
+
+
+<p>
+    <a href="movies/create">Create New</a>
+</p>
+
 <div>
     <form action="/movies" data-enhance data-permanent>
         <input type="search" name="titleFilter" />
@@ -16,9 +22,6 @@
     </form>
 </div>
 
-<p>
-    <a href="movies/create">Create New</a>
-</p>
 
 <QuickGrid Class="table" Items="FilteredMovies">
     <PropertyColumn Property="movie => movie.Title" />
