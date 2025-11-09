@@ -327,3 +327,4 @@ D:\BlazorWebAppMovies\obj\Debug\net9.0\refint\BlazorWebAppMovies.dll
 D:\BlazorWebAppMovies\obj\Debug\net9.0\BlazorWebAppMovies.pdb
 D:\BlazorWebAppMovies\obj\Debug\net9.0\BlazorWebAppMovies.genruntimeconfig.cache
 D:\BlazorWebAppMovies\obj\Debug\net9.0\ref\BlazorWebAppMovies.dll
+D:\BlazorWebAppMovies\obj\Debug\net9.0\BlazorWebAppMovies.sourcelink.json
