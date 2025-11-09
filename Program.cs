@@ -1,10 +1,12 @@
 using BlazorWebAppMovies.Components;
 using BlazorWebAppMovies.Data;
 using BlazorWebAppMovies.Hubs;
+using BlazorWebAppMovies.Services.Email;
 using BlazorSignalRApp.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,6 +37,8 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddTransient<IEmailSender, MailtrapEmailSender>();
 
 AuthenticationBuilder? externalAuthenticationBuilder = null;
 
@@ -109,7 +113,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 // 💬 SignalR Hub
-app.MapHub<ChatHub>("/chathub").RequireAuthorization();
+app.MapHub<ChatHub>("/chathub");
 
 // 🧱 CRUD sayfaları için varsayılan rota (isteğe bağlı)
 app.MapControllers();

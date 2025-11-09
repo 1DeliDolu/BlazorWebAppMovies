@@ -1,0 +1,290 @@
+@page "/account"
+@attribute [Authorize]
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.EntityFrameworkCore
+@using BlazorSignalRApp.Data
+@using BlazorSignalRApp.Models
+@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@inject IEmailSender EmailSender
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Hesap Ayarları</PageTitle>
+
+<div class="container py-5 auth-page">
+    <div class="row justify-content-center g-4">
+        <div class="col-12 col-lg-6">
+            <div class="card auth-card">
+                <div class="card-body">
+                    <h2 class="h4 mb-3">Profil Bilgileri</h2>
+                    <p class="text-muted mb-4">Adınızı ve e-posta adresinizi güncelleyebilirsiniz.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(profileMessage))
+                    {
+                        <div class="alert alert-info">@profileMessage</div>
+                    }
+
+                    <EditForm Model="profileModel" OnValidSubmit="UpdateProfile" FormName="account-profile-form">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Görünen İsim</label>
+                            <InputText class="form-control" @bind-Value="profileModel.DisplayName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">E-posta</label>
+                            <InputText class="form-control" @bind-Value="profileModel.Email" />
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" type="submit" disabled="@profileBusy">Kaydet</button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="SendConfirmationEmail" disabled="@emailBusy">
+                                E-posta Doğrulama
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card auth-card mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Şifre Değiştir</h2>
+
+                    @if (!string.IsNullOrWhiteSpace(passwordMessage))
+                    {
+                        <div class="alert alert-info">@passwordMessage</div>
+                    }
+
+                    <EditForm Model="passwordModel" OnValidSubmit="ChangePassword" FormName="account-password-form">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Mevcut Şifre</label>
+                            <InputText type="password" class="form-control" @bind-Value="passwordModel.OldPassword" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Yeni Şifre</label>
+                            <InputText type="password" class="form-control" @bind-Value="passwordModel.NewPassword" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Yeni Şifre (tekrar)</label>
+                            <InputText type="password" class="form-control" @bind-Value="passwordModel.ConfirmPassword" />
+                        </div>
+
+                        <button class="btn btn-primary" type="submit" disabled="@passwordBusy">Şifreyi Güncelle</button>
+                    </EditForm>
+                </div>
+            </div>
+
+            <div class="card auth-card border-danger mt-3">
+                <div class="card-body">
+                    <h2 class="h5 text-danger mb-3">Hesabı Sil</h2>
+                    <p class="text-muted">Kalıcı olarak hesabınızı ve ilişkili sohbet kayıtlarını silmek için bu alanı kullanın.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(deleteMessage))
+                    {
+                        <div class="alert alert-info">@deleteMessage</div>
+                    }
+
+                    <EditForm Model="deleteModel" OnValidSubmit="DeleteAccount" FormName="account-delete-form">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Mevcut Şifre</label>
+                            <InputText type="password" class="form-control" @bind-Value="deleteModel.Password" />
+                        </div>
+                        <button class="btn btn-danger" type="submit" disabled="@deleteBusy">
+                            Hesabı Sil
+                        </button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly ProfileInput profileModel = new();
+    private readonly ChangePasswordInput passwordModel = new();
+    private readonly DeleteAccountInput deleteModel = new();
+
+    private User? chatProfile;
+    private IdentityUser? identityUser;
+    private string? profileMessage;
+    private string? passwordMessage;
+    private string? deleteMessage;
+    private bool profileBusy;
+    private bool passwordBusy;
+    private bool deleteBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var principal = authState.User;
+        if (principal?.Identity?.IsAuthenticated is not true)
+        {
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        var identityUserId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (identityUserId is null)
+        {
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        identityUser = await UserManager.FindByIdAsync(identityUserId);
+        await using var context = await DbFactory.CreateDbContextAsync();
+        chatProfile = await context.ChatUsers.AsNoTracking().FirstOrDefaultAsync(u => u.IdentityUserId == identityUserId);
+
+        profileModel.DisplayName = chatProfile?.Name ?? identityUser?.UserName ?? string.Empty;
+        profileModel.Email = identityUser?.Email ?? string.Empty;
+    }
+
+    private async Task UpdateProfile()
+    {
+        if (identityUser is null)
+        {
+            profileMessage = "Kullanıcı bulunamadı.";
+            return;
+        }
+
+        profileBusy = true;
+        profileMessage = null;
+
+        identityUser.Email = profileModel.Email;
+        identityUser.UserName = profileModel.Email;
+        identityUser.NormalizedEmail = profileModel.Email?.ToUpperInvariant();
+        identityUser.NormalizedUserName = profileModel.Email?.ToUpperInvariant();
+
+        var identityResult = await UserManager.UpdateAsync(identityUser);
+        if (!identityResult.Succeeded)
+        {
+            profileMessage = string.Join(Environment.NewLine, identityResult.Errors.Select(e => e.Description));
+            profileBusy = false;
+            return;
+        }
+
+        await using var context = await DbFactory.CreateDbContextAsync();
+        var linkedUser = await context.ChatUsers.FirstOrDefaultAsync(u => u.IdentityUserId == identityUser.Id);
+        if (linkedUser is not null)
+        {
+            linkedUser.Name = profileModel.DisplayName;
+            linkedUser.Email = profileModel.Email;
+            await context.SaveChangesAsync();
+        }
+
+        profileMessage = "Profil bilgileriniz güncellendi.";
+        profileBusy = false;
+    }
+
+    private async Task SendConfirmationEmail()
+    {
+        if (identityUser is null)
+        {
+            profileMessage = "Kullanıcı bulunamadı.";
+            return;
+        }
+
+        emailBusy = true;
+        var token = await UserManager.GenerateEmailConfirmationTokenAsync(identityUser);
+        var callbackUrl = NavigationManager.ToAbsoluteUri($"Account/ConfirmEmail?userId={identityUser.Id}&code={Uri.EscapeDataString(token)}");
+        await EmailSender.SendEmailAsync(identityUser.Email!, "E-posta Doğrulama", $"Lütfen doğrulamak için <a href=\"{callbackUrl}\">buraya tıklayın</a>.");
+        profileMessage = "Doğrulama e-postası gönderildi.";
+        emailBusy = false;
+    }
+
+    private async Task ChangePassword()
+    {
+        if (identityUser is null)
+        {
+            passwordMessage = "Kullanıcı bulunamadı.";
+            return;
+        }
+
+        passwordBusy = true;
+        var result = await UserManager.ChangePasswordAsync(identityUser, passwordModel.OldPassword, passwordModel.NewPassword);
+        passwordMessage = result.Succeeded
+            ? "Şifreniz güncellendi."
+            : string.Join(Environment.NewLine, result.Errors.Select(e => e.Description));
+        passwordBusy = false;
+    }
+
+    private async Task DeleteAccount()
+    {
+        if (identityUser is null)
+        {
+            deleteMessage = "Kullanıcı bulunamadı.";
+            return;
+        }
+
+        deleteBusy = true;
+        var passwordValid = await UserManager.CheckPasswordAsync(identityUser, deleteModel.Password);
+        if (!passwordValid)
+        {
+            deleteMessage = "Şifreniz hatalı.";
+            deleteBusy = false;
+            return;
+        }
+
+        await using var context = await DbFactory.CreateDbContextAsync();
+        var linkedUser = await context.ChatUsers.FirstOrDefaultAsync(u => u.IdentityUserId == identityUser.Id);
+        if (linkedUser is not null)
+        {
+            context.ChatUsers.Remove(linkedUser);
+            await context.SaveChangesAsync();
+        }
+
+        await UserManager.DeleteAsync(identityUser);
+        await SignInManager.SignOutAsync();
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    private bool emailBusy;
+
+    private sealed class ProfileInput
+    {
+        [Required(ErrorMessage = "Görünen ad zorunludur.")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "E-posta zorunludur.")]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+    }
+
+    private sealed class ChangePasswordInput
+    {
+        [Required(ErrorMessage = "Mevcut şifre zorunludur.")]
+        [DataType(DataType.Password)]
+        public string OldPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Yeni şifre zorunludur.")]
+        [StringLength(100, MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Yeni şifre tekrar zorunludur.")]
+        [Compare(nameof(NewPassword), ErrorMessage = "Şifreler eşleşmiyor.")]
+        [DataType(DataType.Password)]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    private sealed class DeleteAccountInput
+    {
+        [Required(ErrorMessage = "Şifrenizi girin.")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+    }
+}

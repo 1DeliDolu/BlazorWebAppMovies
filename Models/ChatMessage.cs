@@ -15,4 +15,11 @@ public class ChatMessage
     public string Message { get; set; } = string.Empty;
 
     public DateTime SentAt { get; set; } = DateTime.UtcNow;
+
+    public bool IsPrivate { get; set; }
+
+    public int? RecipientUserId { get; set; }
+
+    [StringLength(50)]
+    public string? RecipientUserName { get; set; }
 }

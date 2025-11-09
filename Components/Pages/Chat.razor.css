@@ -1,0 +1,115 @@
+.:root {
+    --chat-bg: #f5f5ff;
+    --chat-glass: rgba(255, 255, 255, 0.92);
+}
+
+.chat-shell {
+    min-height: calc(100vh - 4rem);
+    background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.1), transparent 45%),
+        radial-gradient(circle at bottom right, rgba(236, 72, 153, 0.09), transparent 40%),
+        var(--chat-bg);
+}
+
+.glass-panel {
+    background: var(--chat-glass);
+    border-radius: 1.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(14px);
+    padding: 1.75rem;
+}
+
+.chat-panel__header {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    padding-bottom: 1rem;
+}
+
+.chat-panel__body {
+    margin: 1.25rem 0;
+}
+
+.chat-user-list {
+    max-height: 22rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.chat-user {
+    padding: 0.75rem 0.9rem;
+    border-radius: 1.1rem;
+    border: 1px solid transparent;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    margin-bottom: 0.6rem;
+    background: transparent;
+}
+
+.chat-user:hover {
+    background: rgba(15, 23, 42, 0.05);
+}
+
+.chat-user:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25);
+}
+
+.chat-user.active {
+    background: rgba(79, 70, 229, 0.1);
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.chat-timeline {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.chat-bubble {
+    border-radius: 1.25rem;
+    padding: 0.85rem 1.1rem;
+    margin-bottom: 1rem;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    transition: transform 0.2s ease;
+}
+
+.chat-bubble.me {
+    margin-left: auto;
+    background: linear-gradient(120deg, #4f46e5, #7c3aed);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 15px 30px rgba(79, 70, 229, 0.25);
+}
+
+.chat-bubble__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 0.35rem;
+    opacity: 0.75;
+}
+
+.chat-empty {
+    border: 2px dashed rgba(15, 23, 42, 0.2);
+    border-radius: 1.3rem;
+}
+
+.chat-panel__composer .composer-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.chat-panel__composer textarea {
+    border-radius: 1rem;
+    resize: none;
+    min-height: 70px;
+}
+
+@media (max-width: 576px) {
+    .glass-panel {
+        padding: 1.2rem;
+    }
+
+    .chat-panel__composer .composer-row {
+        flex-direction: column;
+    }
+}

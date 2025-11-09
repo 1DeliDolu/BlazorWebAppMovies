@@ -1,0 +1,13 @@
+::deep .card.auth-card {
+    border-radius: 1.5rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+}
+
+::deep .form-control {
+    border-radius: 0.85rem;
+}
+
+::deep .btn {
+    border-radius: 0.75rem;
+}

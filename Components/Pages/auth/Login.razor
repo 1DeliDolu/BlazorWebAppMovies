@@ -1,0 +1,118 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@inject SignInManager<IdentityUser> SignInManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Login</PageTitle>
+
+<div class="container py-5 auth-page">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-5">
+            <div class="card auth-card">
+                <div class="card-body">
+                    <h1 class="h4 mb-3">Giriş Yap</h1>
+                    <p class="text-muted mb-4">Lütfen hesabınıza erişmek için oturum açın.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="auth-login-form">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label" for="login-email">E-posta</label>
+                            <InputText id="login-email" class="form-control" @bind-Value="loginModel.Email" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="login-password">Şifre</label>
+                            <InputText id="login-password" type="password" class="form-control"
+                                @bind-Value="loginModel.Password" />
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <InputCheckbox id="rememberMe" class="form-check-input"
+                                @bind-Value="loginModel.RememberMe" />
+                            <label class="form-check-label" for="rememberMe">Beni hatırla</label>
+                        </div>
+
+                        <button class="btn btn-primary w-100" type="submit" disabled="@isBusy">
+                            @(isBusy ? "Giriş yapılıyor..." : "Giriş yap")
+                        </button>
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Hesabın yok mu?
+                            <a href="/register">Kayıt ol</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly LoginInput loginModel = new();
+    private string? errorMessage;
+    private bool isBusy;
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    private async Task HandleLogin()
+    {
+        isBusy = true;
+        errorMessage = null;
+
+        var redirectUrl = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl;
+        var result = await SignInManager.PasswordSignInAsync(
+        loginModel.Email,
+        loginModel.Password,
+        loginModel.RememberMe,
+        lockoutOnFailure: true);
+
+        if (result.Succeeded)
+        {
+            NavigationManager.NavigateTo(redirectUrl, forceLoad: true);
+        }
+        else if (result.IsLockedOut)
+        {
+            errorMessage = "Hesabınız geçici olarak kilitlendi. Lütfen daha sonra tekrar deneyin.";
+        }
+        else
+        {
+            errorMessage = "Geçersiz giriş denemesi.";
+        }
+
+        isBusy = false;
+    }
+
+    private sealed class LoginInput
+    {
+        @* firstanme and lastanme *@
+
+        [Required(ErrorMessage = "Ad zorunludur.")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Soyad zorunludur.")]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "E-posta zorunludur.")]
+        [EmailAddress(ErrorMessage = "Geçerli bir e-posta girin.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Şifre zorunludur.")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; }
+    }
+}

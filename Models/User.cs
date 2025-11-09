@@ -16,4 +16,7 @@ public class User
 
     [StringLength(100)]
     public string? Role { get; set; }
+
+    [StringLength(450)]
+    public string? IdentityUserId { get; set; }
 }

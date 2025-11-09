@@ -1,0 +1,126 @@
+@page "/register"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@using System.Linq
+@using Microsoft.EntityFrameworkCore
+@using BlazorSignalRApp.Data
+@using BlazorSignalRApp.Models
+@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@inject NavigationManager NavigationManager
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Register</PageTitle>
+
+<div class="container py-5 auth-page">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7 col-lg-6">
+            <div class="card auth-card">
+                <div class="card-body">
+                    <h1 class="h4 mb-3">Kayıt Ol</h1>
+                    <p class="text-muted mb-4">Yeni bir hesap oluşturup sohbetlere katılın.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="registerModel" OnValidSubmit="HandleRegister" FormName="auth-register-form">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label" for="register-email">E-posta</label>
+                            <InputText id="register-email" class="form-control" @bind-Value="registerModel.Email" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="register-password">Şifre</label>
+                            <InputText id="register-password" type="password" class="form-control" @bind-Value="registerModel.Password" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" for="register-confirm">Şifre (tekrar)</label>
+                            <InputText id="register-confirm" type="password" class="form-control" @bind-Value="registerModel.ConfirmPassword" />
+                        </div>
+
+                        <button class="btn btn-primary w-100" type="submit" disabled="@isBusy">
+                            @(isBusy ? "Kayıt yapılıyor..." : "Kayıt ol")
+                        </button>
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Zaten hesabın var mı?
+                            <a href="/login">Giriş yap</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly RegisterInput registerModel = new();
+    private string? errorMessage;
+    private bool isBusy;
+
+    private async Task HandleRegister()
+    {
+        isBusy = true;
+        errorMessage = null;
+
+        var user = new IdentityUser
+        {
+            UserName = registerModel.Email,
+            Email = registerModel.Email
+        };
+
+        var result = await UserManager.CreateAsync(user, registerModel.Password);
+        if (result.Succeeded)
+        {
+            await using var context = await DbFactory.CreateDbContextAsync();
+            if (!await context.ChatUsers.AnyAsync(u => u.IdentityUserId == user.Id))
+            {
+                context.ChatUsers.Add(new User
+                {
+                    Name = BuildDisplayName(registerModel.Email),
+                    Email = registerModel.Email,
+                    Role = "Member",
+                    IdentityUserId = user.Id
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await SignInManager.SignInAsync(user, isPersistent: false);
+            NavigationManager.NavigateTo("/", forceLoad: true);
+            return;
+        }
+
+        errorMessage = string.Join(Environment.NewLine, result.Errors.Select(e => e.Description));
+        isBusy = false;
+    }
+
+    private static string BuildDisplayName(string email)
+        => string.IsNullOrWhiteSpace(email) ? "Member" : email.Split('@')[0];
+
+    private sealed class RegisterInput
+    {
+        [Required(ErrorMessage = "E-posta zorunludur.")]
+        [EmailAddress(ErrorMessage = "Geçerli bir e-posta girin.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Şifre zorunludur.")]
+        [StringLength(100, ErrorMessage = "{0} en az {2} ve en fazla {1} karakter olmalıdır.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Şifre tekrar zorunludur.")]
+        [DataType(DataType.Password)]
+        [Compare(nameof(Password), ErrorMessage = "Şifreler eşleşmiyor.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

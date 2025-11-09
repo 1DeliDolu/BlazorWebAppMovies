@@ -15,14 +15,12 @@
                     <span class="small text-muted me-2">
                         👤 @authState.User.Identity?.Name
                     </span>
-                    <a class="nav-link px-0 me-2" href="/Account/Manage">Account</a>
-                    <form method="post" action="/Account/Logout?returnUrl=/" class="d-inline">
-                        <button type="submit" class="btn btn-link nav-link px-0">Logout</button>
-                    </form>
+                    <a class="nav-link px-0 me-2" href="/account">Account</a>
+                    <a class="nav-link px-0" href="/logout">Logout</a>
                 </Authorized>
                 <NotAuthorized>
-                    <a class="nav-link px-0 me-2" href="/Account/Login">Login</a>
-                    <a class="nav-link px-0" href="/Account/Register">Register</a>
+                    <a class="nav-link px-0 me-2" href="/login">Login</a>
+                    <a class="nav-link px-0" href="/register">Register</a>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
