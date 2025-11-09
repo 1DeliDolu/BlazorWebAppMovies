@@ -2,6 +2,10 @@
 bin/
 obj/
 
+# Compressed / binary artifacts
+*.gz
+*.dll
+
 # IDE-specific folders
 .vs/
 .idea/
@@ -19,8 +23,3 @@ Thumbs.db
 .DS_Store
 ehthumbs.db
 *.swp
-
-
-*.gz
-*.dll
-

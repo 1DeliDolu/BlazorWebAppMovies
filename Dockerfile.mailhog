@@ -1,0 +1,11 @@
+# MailHog için minimal Dockerfile
+FROM mailhog/mailhog:v1.0.1
+
+# MailHog SMTP ve Web UI portlarını expose et
+EXPOSE 1025 8025
+
+# MailHog varsayılan komutu
+ENTRYPOINT ["MailHog"]
+
+# Web UI: http://localhost:8025
+# SMTP Server: localhost:1025

@@ -1,16 +1,19 @@
-using Microsoft.EntityFrameworkCore;
 using BlazorSignalRApp.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlazorSignalRApp.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
-    public DbSet<User> Users => Set<User>();
+    public DbSet<User> ChatUsers => Set<User>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,5 +26,19 @@ public class ApplicationDbContext : DbContext
             new User { Id = 4, Name = "Nyota Uhura", Email = "uhura@enterprise.com", Role = "Communications Officer" },
             new User { Id = 5, Name = "Montgomery Scott", Email = "scotty@enterprise.com", Role = "Chief Engineer" }
         );
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.ToTable("ChatMessages");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserName)
+                .IsRequired()
+                .HasMaxLength(50);
+            entity.Property(e => e.Message)
+                .IsRequired()
+                .HasMaxLength(500);
+            entity.Property(e => e.SentAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+        });
     }
 }
